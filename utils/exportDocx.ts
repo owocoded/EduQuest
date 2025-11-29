@@ -15,57 +15,63 @@ export const exportToDocx = (questions: QuestionData, fileName: string = 'questi
   }));
 
   // MCQs
-  if (questions.mcqs && questions.mcqs.length > 0) {
+  if (questions.mcqs && Array.isArray(questions.mcqs) && questions.mcqs.length > 0) {
     paragraphs.push(new Paragraph({
       text: "Multiple Choice Questions:",
       heading: HeadingLevel.HEADING_2,
     }));
 
     questions.mcqs.forEach((mcq, index) => {
-      paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({
-            text: `${index + 1}. ${mcq.question}`,
-            bold: true
-          })
-        ]
-      }));
-
-      mcq.options.forEach(option => {
+      if (mcq && mcq.question && mcq.options && mcq.answer) {
         paragraphs.push(new Paragraph({
           children: [
-            new TextRun(`   ${option}`)
+            new TextRun({
+              text: `${index + 1}. ${mcq.question}`,
+              bold: true
+            })
           ]
         }));
-      });
 
-      paragraphs.push(new Paragraph({
-        children: [
-          new TextRun({
-            text: `   Answer: ${mcq.answer}`,
-            italics: true
-          })
-        ]
-      }));
+        mcq.options.forEach(option => {
+          if (option) {
+            paragraphs.push(new Paragraph({
+              children: [
+                new TextRun(`   ${option}`)
+              ]
+            }));
+          }
+        });
 
-      // Add blank line
-      paragraphs.push(new Paragraph(""));
+        paragraphs.push(new Paragraph({
+          children: [
+            new TextRun({
+              text: `   Answer: ${mcq.answer}`,
+              italics: true
+            })
+          ]
+        }));
+
+        // Add blank line
+        paragraphs.push(new Paragraph(""));
+      }
     });
   }
 
   // Theory questions
-  if (questions.theory && questions.theory.length > 0) {
+  if (questions.theory && Array.isArray(questions.theory) && questions.theory.length > 0) {
     paragraphs.push(new Paragraph({
       text: "Theory Questions:",
       heading: HeadingLevel.HEADING_2,
     }));
 
     questions.theory.forEach((theory, index) => {
-      paragraphs.push(new Paragraph({
-        children: [
-          new TextRun(`${index + 1}. ${theory}`)
-        ]
-      }));
+      if (theory) {
+        paragraphs.push(new Paragraph({
+          children: [
+            new TextRun(`${index + 1}. ${theory}`)
+          ]
+        }));
+      }
     });
   }
 

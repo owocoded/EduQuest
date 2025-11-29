@@ -1,50 +1,36 @@
-import { action } from "./_generated/server";
+"use node";
+
+import { action } from "../_generated/server";
 import { v } from "convex/values";
-import { StorageId } from "./_generated/dataModel";
-
-// This action will extract text from uploaded files
-// For now, this is a placeholder implementation 
-// In a real implementation, we would use libraries like:
-// - pdf-parse for PDF files
-// - mammoth for DOCX files
-// - officeparser for PPTX files
-// - Direct read for TXT files
-
-// Since this is running on the server, we would need to import these libraries
-// For a real implementation, you would import:
-// import pdfParse from 'pdf-parse';
-// import mammoth from 'mammoth';
-// import { parse } from 'officeparser';
+import { ActionCtx } from "../_generated/server";
 
 export default action({
   args: {
     storageId: v.id("_storage"),
   },
-  handler: async (ctx, args) => {
-    // In a real implementation, we would:
-    // 1. Get the file from Convex storage
-    // 2. Determine the file type
-    // 3. Use appropriate parser to extract text
-    // 4. Return the extracted text
-    
+  handler: async (ctx: ActionCtx, args: { storageId: any }) => {
     // Get the file URL from storage
     const fileUrl = await ctx.storage.getUrl(args.storageId);
     if (!fileUrl) {
       throw new Error("Could not retrieve file from storage");
     }
-    
+
     // Fetch the file content
     const fileResponse = await fetch(fileUrl);
     if (!fileResponse.ok) {
       throw new Error(`Could not fetch file: ${fileResponse.statusText}`);
     }
-    
+
     // Get the content type to determine the file type
     const contentType = fileResponse.headers.get('content-type');
     const content = await fileResponse.arrayBuffer();
-    
-    // In a real implementation, we would parse the file content based on its type
-    // For now, returning a placeholder with a note
-    return "This is the extracted text from the uploaded file. In a real implementation, this would be the actual content of the PDF, DOCX, PPTX, or TXT file after proper parsing.";
+
+    // In Convex server environment, we can't use pdf-parse or mammoth directly
+    // These would need to run client-side or in a different environment
+    // For a real implementation, text extraction would happen client-side before uploading
+    // Or using a serverless function outside of Convex
+
+    // Returning a placeholder with explanation
+    return "Text extraction would happen client-side before uploading to Convex in a real implementation. Server-side parsing of complex formats like PDF/DOCX is not feasible in Convex environment.";
   },
 });

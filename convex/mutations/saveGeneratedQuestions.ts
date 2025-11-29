@@ -1,4 +1,6 @@
-import { mutation } from "./_generated/server";
+
+
+import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 
 export default mutation({
@@ -16,7 +18,7 @@ export default mutation({
   },
   handler: async (ctx, args) => {
     const userId = "anonymous"; // For version 1, no authentication
-    
+
     const questionId = await ctx.db.insert("questions", {
       userId,
       materialId: args.materialId,
@@ -25,7 +27,7 @@ export default mutation({
       engine: args.engine,
       createdAt: Date.now(),
     });
-    
+
     return questionId;
   },
 });

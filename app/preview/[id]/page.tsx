@@ -11,6 +11,18 @@ import { useRouter } from 'next/navigation';
 export default function PreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   // const convex = useConvex();
+
+  interface MCQ {
+    question: string;
+    options: string[];
+    answer: string;
+  }
+
+  interface QuestionResult {
+    mcqs: MCQ[];
+    theory: string[];
+  }
+
   const [userPrompt, setUserPrompt] = useState('');
   const [selectedEngine, setSelectedEngine] = useState<'gemini' | 'huggingface'>('gemini');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -77,7 +89,7 @@ This content would then be processed by our AI engines to generate relevant ques
       // });
 
       // For demo, creating a mock result
-      const result = {
+      const result: QuestionResult = {
         mcqs: [
           {
             question: "What is the main concept discussed in the document?",

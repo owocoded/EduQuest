@@ -8,14 +8,32 @@ import { exportToTxt } from '../../utils/exportTxt';
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [questions, setQuestions] = useState<any>(null);
+
+  interface MCQ {
+    question: string;
+    options: string[];
+    answer: string;
+  }
+
+  interface QuestionData {
+    mcqs: MCQ[];
+    theory: string[];
+  }
+
+  const [questions, setQuestions] = useState<QuestionData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect () => {
+  useEffect(() => {
     // Get the generated questions from localStorage (placeholder)
     const storedQuestions = localStorage.getItem('generatedQuestions');
     if (storedQuestions) {
-      setQuestions(JSON.parse(storedQuestions));
+      try {
+        const parsedQuestions = JSON.parse(storedQuestions);
+        setQuestions(parsedQuestions);
+      } catch (error) {
+        console.error('Error parsing stored questions:', error);
+        router.push('/');
+      }
     } else {
       // If no questions found, redirect to home
       router.push('/');

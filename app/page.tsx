@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // Note: These imports will work once Convex is properly initialized and generated
 // For now, we'll need to run `npx convex dev` to generate the API files
-// import { useMutation } from 'convex/react';
-// import { api } from '../../../convex/_generated/api';
-// import { Id } from '../../../convex/_generated/dataModel';
+// import { useMutation, useAction } from 'convex/react';
+// import { api } from '../../convex/_generated/api';
+// import { Id } from '../../convex/_generated/dataModel';
 
 export default function Home() {
   const router = useRouter();
@@ -14,15 +14,16 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // const [uploadMaterial] = useMutation(api.mutations.uploadMaterial);
+  // const [createMaterial] = useMutation(api.mutations.uploadMaterial);
+  // const [generateUploadUrl] = useAction(api.actions.generateUploadUrl);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
       // Validate file type
-      const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-      if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.docx') && !file.name.endsWith('.txt') && !file.name.endsWith('.pptx')) {
+      const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'];
+      if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.docx') && !file.name.endsWith('.pptx') && !file.name.endsWith('.txt')) {
         setError('Invalid file type. Please upload a PDF, DOCX, PPTX, or TXT file.');
         return;
       }
@@ -37,13 +38,13 @@ export default function Home() {
 
     setIsUploading(true);
     setError(null);
-    
+
     try {
       // In a real implementation, we would upload the file to Convex storage first
       // and then call the uploadMaterial mutation with the storage ID
       // For now, we'll simulate this with a placeholder
       console.log("Uploading file:", uploadFile.name);
-      
+
       // In a real implementation, this would be:
       // const storageId = await convex.mutation(api.mutations.uploadToStorage, { file });
       // await uploadMaterial({
@@ -51,10 +52,10 @@ export default function Home() {
       //   originalId: storageId,
       //   extractedText: '' // Will be populated after text extraction
       // });
-      
+
       // For now, we'll use a fake storage ID
       const fakeStorageId = 'fake_storage_id';
-      
+
       // Navigate to text preview page
       router.push(`/preview/${fakeStorageId}`);
     } catch (error) {

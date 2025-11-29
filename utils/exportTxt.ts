@@ -8,26 +8,32 @@ export const exportToTxt = (questions: QuestionData, fileName: string = 'questio
   textContent += "==================\n\n";
 
   // MCQs
-  if (questions.mcqs && questions.mcqs.length > 0) {
+  if (questions.mcqs && Array.isArray(questions.mcqs) && questions.mcqs.length > 0) {
     textContent += "Multiple Choice Questions:\n";
     textContent += "---------------------------\n";
 
     questions.mcqs.forEach((mcq, index) => {
-      textContent += `${index + 1}. ${mcq.question}\n`;
-      mcq.options.forEach(option => {
-        textContent += `   ${option}\n`;
-      });
-      textContent += `   Answer: ${mcq.answer}\n\n`;
+      if (mcq && mcq.question && mcq.options && mcq.answer) {
+        textContent += `${index + 1}. ${mcq.question}\n`;
+        mcq.options.forEach(option => {
+          if (option) {
+            textContent += `   ${option}\n`;
+          }
+        });
+        textContent += `   Answer: ${mcq.answer}\n\n`;
+      }
     });
   }
 
   // Theory questions
-  if (questions.theory && questions.theory.length > 0) {
+  if (questions.theory && Array.isArray(questions.theory) && questions.theory.length > 0) {
     textContent += "\nTheory Questions:\n";
     textContent += "-----------------\n";
 
     questions.theory.forEach((theory, index) => {
-      textContent += `${index + 1}. ${theory}\n`;
+      if (theory) {
+        textContent += `${index + 1}. ${theory}\n`;
+      }
     });
   }
 

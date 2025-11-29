@@ -14,29 +14,33 @@ export const exportToPdf = (questions: QuestionData, fileName: string = 'questio
   yPos += 15;
 
   // MCQs
-  if (questions.mcqs && questions.mcqs.length > 0) {
+  if (questions.mcqs && Array.isArray(questions.mcqs) && questions.mcqs.length > 0) {
     doc.setFontSize(14);
     doc.text('Multiple Choice Questions:', 20, yPos);
     yPos += 10;
 
     questions.mcqs.forEach((mcq, index) => {
-      doc.setFontSize(12);
-      doc.text(`${index + 1}. ${mcq.question}`, 20, yPos);
-      yPos += 8;
+      if (mcq && mcq.question && mcq.options && mcq.answer) {
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. ${mcq.question}`, 20, yPos);
+        yPos += 8;
 
-      mcq.options.forEach(option => {
-        doc.text(`   ${option}`, 20, yPos);
-        yPos += 6;
-      });
+        mcq.options.forEach(option => {
+          if (option) {
+            doc.text(`   ${option}`, 20, yPos);
+            yPos += 6;
+          }
+        });
 
-      doc.setFontSize(10);
-      doc.text(`   Answer: ${mcq.answer}`, 20, yPos);
-      yPos += 10;
+        doc.setFontSize(10);
+        doc.text(`   Answer: ${mcq.answer}`, 20, yPos);
+        yPos += 10;
 
-      // Check if we need a new page
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
+        // Check if we need a new page
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
       }
     });
   }
@@ -45,20 +49,22 @@ export const exportToPdf = (questions: QuestionData, fileName: string = 'questio
   yPos += 10;
 
   // Theory questions
-  if (questions.theory && questions.theory.length > 0) {
+  if (questions.theory && Array.isArray(questions.theory) && questions.theory.length > 0) {
     doc.setFontSize(14);
     doc.text('Theory Questions:', 20, yPos);
     yPos += 10;
 
     questions.theory.forEach((theory, index) => {
-      doc.setFontSize(12);
-      doc.text(`${index + 1}. ${theory}`, 20, yPos);
-      yPos += 10;
+      if (theory) {
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. ${theory}`, 20, yPos);
+        yPos += 10;
 
-      // Check if we need a new page
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
+        // Check if we need a new page
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
       }
     });
   }

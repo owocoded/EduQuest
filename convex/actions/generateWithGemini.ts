@@ -1,4 +1,6 @@
-import { action } from "./_generated/server";
+"use node";
+
+import { action } from "../_generated/server";
 import { v } from "convex/values";
 
 // This action calls the Gemini API to generate questions
@@ -14,7 +16,7 @@ export default action({
     }
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    
+
     // Construct the prompt for question generation
     const prompt = `Based on the following text: "${args.text}" and these instructions: "${args.userPrompt}", generate questions in the following JSON format:
     {
@@ -30,7 +32,7 @@ export default action({
         "Sample theory question 2"
       ]
     }
-    
+
     Generate the questions based on the content. Return ONLY the JSON with no additional text.`;
 
     try {
@@ -53,10 +55,10 @@ export default action({
       }
 
       const data = await response.json();
-      
+
       // Extract the generated content from the Gemini response
       const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
+
       if (!generatedText) {
         throw new Error('No generated content from Gemini');
       }
@@ -67,10 +69,10 @@ export default action({
       if (!jsonMatch) {
         throw new Error('Could not find JSON in Gemini response');
       }
-      
+
       const jsonString = jsonMatch[0];
       const parsedData = JSON.parse(jsonString);
-      
+
       return parsedData;
     } catch (error) {
       console.error('Error calling Gemini API:', error);
