@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-// Note: These imports will work once Convex is properly initialized and generated
-// For now, we'll need to run `npx convex dev` to generate the API files
-// import { useMutation, useAction } from 'convex/react';
-// import { api } from '../../convex/_generated/api';
-// import { Id } from '../../convex/_generated/dataModel';
+import { useAction } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { extractTextFromFile } from '../../utils/textExtraction';
 
 export default function Home() {
   const router = useRouter();
@@ -14,20 +12,19 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // const [createMaterial] = useMutation(api.mutations.uploadMaterial);
-  // const [generateUploadUrl] = useAction(api.actions.generateUploadUrl);
+  const [generateUploadUrl] = useAction(api.actions.generateUploadUrl);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // Validate file type
       const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain'];
       if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.docx') && !file.name.endsWith('.pptx') && !file.name.endsWith('.txt')) {
         setError('Invalid file type. Please upload a PDF, DOCX, PPTX, or TXT file.');
         return;
       }
-      
+
       setError(null);
       setUploadFile(file);
     }
@@ -40,24 +37,51 @@ export default function Home() {
     setError(null);
 
     try {
-      // In a real implementation, we would upload the file to Convex storage first
-      // and then call the uploadMaterial mutation with the storage ID
-      // For now, we'll simulate this with a placeholder
-      console.log("Uploading file:", uploadFile.name);
+      // Determine if we need client-side extraction based on file type
+      const needsClientExtraction = !uploadFile.type.includes('text/plain') &&
+                                   !uploadFile.name.endsWith('.txt');
 
-      // In a real implementation, this would be:
-      // const storageId = await convex.mutation(api.mutations.uploadToStorage, { file });
-      // await uploadMaterial({
-      //   fileName: uploadFile.name,
-      //   originalId: storageId,
-      //   extractedText: '' // Will be populated after text extraction
-      // });
+      let storageId;
 
-      // For now, we'll use a fake storage ID
-      const fakeStorageId = 'fake_storage_id';
+      if (needsClientExtraction) {
+        // For complex files, extract text client-side first, then upload the extracted text
+        const extractedText = await extractTextFromFile(uploadFile);
 
-      // Navigate to text preview page
-      router.push(`/preview/${fakeStorageId}`);
+        // In a real implementation, we might want to upload the extracted text as a text file
+        // For now, we'll pass it directly to the preview page using localStorage
+        const tempId = `temp_${Date.now()}`;
+        localStorage.setItem(`extractedText_${tempId}`, extractedText);
+        localStorage.setItem(`filename_${tempId}`, uploadFile.name);
+
+        // Navigate to preview page with temp ID
+        router.push(`/preview/${tempId}`);
+      } else {
+        // For text files, upload directly to Convex storage
+        const { uploadUrl } = await generateUploadUrl({});
+
+        // Upload the file to Convex storage using the generated URL
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          body: uploadFile,
+          headers: {
+            'Content-Type': uploadFile.type || 'application/octet-stream'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        }
+
+        // Get the storage ID from the response headers
+        storageId = response.headers.get('X-Convex-Storage-Id');
+        if (!storageId) {
+          throw new Error('No storage ID returned from upload');
+        }
+
+        // Navigate to text preview page with the storage ID
+        router.push(`/preview/${storageId}`);
+      }
+
     } catch (error) {
       console.error('Upload error:', error);
       setError('Upload failed. Please try again.');
@@ -114,11 +138,11 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">Upload Learning Material</h3>
                 <p className="text-sm text-gray-500 mb-4">PDF, DOCX, PPTX, or TXT files</p>
-                <input 
-                  type="file" 
-                  accept=".pdf,.docx,.pptx,.txt" 
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.pptx,.txt"
                   onChange={handleFileChange}
-                  className="hidden" 
+                  className="hidden"
                   id="file-upload"
                 />
                 <label htmlFor="file-upload" className="cursor-pointer inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
@@ -140,7 +164,7 @@ export default function Home() {
                     </svg>
                     <span className="text-green-800 font-medium">Selected: {uploadFile.name}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setUploadFile(null)}
                     className="text-green-700 hover:text-green-900"
                   >

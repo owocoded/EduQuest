@@ -22,15 +22,19 @@ export default action({
     }
 
     // Get the content type to determine the file type
-    const contentType = fileResponse.headers.get('content-type');
+    const contentType = fileResponse.headers.get('content-type') || '';
     const content = await fileResponse.arrayBuffer();
 
-    // In Convex server environment, we can't use pdf-parse or mammoth directly
-    // These would need to run client-side or in a different environment
-    // For a real implementation, text extraction would happen client-side before uploading
-    // Or using a serverless function outside of Convex
-
-    // Returning a placeholder with explanation
-    return "Text extraction would happen client-side before uploading to Convex in a real implementation. Server-side parsing of complex formats like PDF/DOCX is not feasible in Convex environment.";
+    // For text files, we can directly decode the content
+    if (contentType.includes('text/plain') || fileUrl.endsWith('.txt')) {
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(content);
+    } else {
+      // For other file types (PDF, DOCX, PPTX), we return a message indicating
+      // that text extraction should happen client-side before upload
+      // This is the recommended approach in Convex since server-side processing
+      // of these complex formats is not straightforward
+      return `File was uploaded successfully. Text extraction for complex formats (PDF, DOCX, PPTX) happens client-side before upload in a complete implementation. File size: ${content.byteLength} bytes.`;
+    }
   },
 });

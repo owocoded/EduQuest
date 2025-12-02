@@ -2,15 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// Note: These imports will work once Convex is properly initialized and generated
-// For now, we'll need to run `npx convex dev` to generate the API files
-// import { useConvex, useAction } from 'convex/react';
-// import { api } from '../../../convex/_generated/api';
-// import { Id } from '../../../convex/_generated/dataModel';
+import { useAction } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 export default function PreviewPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  // const convex = useConvex();
 
   interface MCQ {
     question: string;
@@ -30,41 +26,39 @@ export default function PreviewPage({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // // Action to extract text
-  // const extractText = useAction(api.actions.extractText);
-  // // Action to generate questions
-  // const generateQuestions = useAction(api.actions.generateQuestions);
+  // Action to extract text from stored files
+  const [extractText] = useAction(api.actions.extractText);
+  // Action to generate questions
+  const [generateQuestions] = useAction(api.actions.generateQuestions);
 
   useEffect(() => {
     const fetchExtractedText = async () => {
       try {
         setIsLoading(true);
-        // // Call the extractText action with the storage ID
-        // const text = await extractText({
-        //   storageId: params.id as unknown as Id<"_storage">
-        // });
-        //
-        // // For demo purposes, we'll use sample text instead
-        const text = `This is a sample document text that would be extracted from the uploaded file. In a real implementation, this would come from the Convex database after the file is uploaded and processed.
 
-The extracted text would contain the content of PDF, DOCX, PPTX, or TXT files that the user uploaded. This content is then used by the AI to generate questions based on the material.
+        // Check if this is a temporary ID (starts with 'temp_') from client-side extraction
+        // or a real Convex storage ID
+        if (params.id.startsWith('temp_')) {
+          // This is from client-side extraction, get from localStorage
+          const storedText = localStorage.getItem(`extractedText_${params.id}`);
+          const filename = localStorage.getItem(`filename_${params.id}`);
 
-Multiple paragraphs would be included in the actual extracted text, representing the full content of the learning material that the user wants to generate questions from.
+          if (!storedText) {
+            throw new Error('No extracted text found for this document. Please try uploading again.');
+          }
 
-For example, if the document was about computer science, it might include sections on:
-- Algorithms and data structures
-- Programming concepts
-- System design principles
-- Database management
-- Network protocols
+          setExtractedText(storedText);
+        } else {
+          // This is a real Convex storage ID, extract text server-side
+          const text = await extractText({
+            storageId: params.id // This is the Convex storage ID
+          });
 
-This content would then be processed by our AI engines to generate relevant questions.`;
-
-        setExtractedText(text);
+          setExtractedText(text);
+        }
       } catch (err) {
         console.error('Error fetching extracted text:', err);
         setError('Failed to load extracted text. Please try uploading the file again.');
-        // In a real implementation, we might want to redirect back to upload
       } finally {
         setIsLoading(false);
       }
@@ -73,7 +67,7 @@ This content would then be processed by our AI engines to generate relevant ques
     if (params.id) {
       fetchExtractedText();
     }
-  }, [params.id]);
+  }, [params.id, extractText]);
 
   const handleGenerate = async () => {
     if (!extractedText) return;
@@ -81,38 +75,17 @@ This content would then be processed by our AI engines to generate relevant ques
     setIsGenerating(true);
     setError(null);
     try {
-      // // Call the generateQuestions action
-      // const result = await generateQuestions({
-      //   text: extractedText,
-      //   userPrompt: userPrompt || 'Generate 5 multiple choice questions and 3 theory questions based on the text',
-      //   engine: selectedEngine
-      // });
+      // Call the generateQuestions action with the extracted text
+      const result = await generateQuestions({
+        text: extractedText,
+        userPrompt: userPrompt || 'Generate 5 multiple choice questions and 3 theory questions based on the text',
+        engine: selectedEngine
+      });
 
-      // For demo, creating a mock result
-      const result: QuestionResult = {
-        mcqs: [
-          {
-            question: "What is the main concept discussed in the document?",
-            options: ["A) Algorithms", "B) Data Structures", "C) System Design", "D) Programming Languages"],
-            answer: "A) Algorithms"
-          },
-          {
-            question: "Which principle is emphasized in the material?",
-            options: ["A) Encapsulation", "B) Abstraction", "C) Inheritance", "D) Polymorphism"],
-            answer: "B) Abstraction"
-          }
-        ],
-        theory: [
-          "Explain the core principles mentioned in the document.",
-          "Describe the applications of the concepts discussed.",
-          "Analyze the implications of the theories presented."
-        ]
-      };
-      
       // Save the generated questions to the database
       // In a real implementation:
       // const materialId = await convex.mutation(api.mutations.uploadMaterial, {
-      //   fileName: 'Uploaded File',
+      //   fileName: filename,
       //   originalId: params.id as unknown as Id<"_storage">,
       //   extractedText: extractedText
       // });
@@ -123,10 +96,10 @@ This content would then be processed by our AI engines to generate relevant ques
       //   theory: result.theory,
       //   engine: selectedEngine
       // });
-      
-      // For demo, store in localStorage
+
+      // For now, store in localStorage
       localStorage.setItem('generatedQuestions', JSON.stringify(result));
-      
+
       // Navigate to results page
       router.push(`/results`);
     } catch (error) {
@@ -192,10 +165,10 @@ This content would then be processed by our AI engines to generate relevant ques
               AI Engine
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div 
+              <div
                 className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                  selectedEngine === 'gemini' 
-                    ? 'border-indigo-500 bg-indigo-50' 
+                  selectedEngine === 'gemini'
+                    ? 'border-indigo-500 bg-indigo-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
                 onClick={() => setSelectedEngine('gemini')}
@@ -214,11 +187,11 @@ This content would then be processed by our AI engines to generate relevant ques
                   </label>
                 </div>
               </div>
-              
-              <div 
+
+              <div
                 className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                  selectedEngine === 'huggingface' 
-                    ? 'border-indigo-500 bg-indigo-50' 
+                  selectedEngine === 'huggingface'
+                    ? 'border-indigo-500 bg-indigo-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
                 onClick={() => setSelectedEngine('huggingface')}
@@ -247,7 +220,7 @@ This content would then be processed by our AI engines to generate relevant ques
             >
               Back to Upload
             </button>
-            
+
             <button
               onClick={handleGenerate}
               disabled={isGenerating || !extractedText}
